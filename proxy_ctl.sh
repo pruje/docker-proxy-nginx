@@ -7,8 +7,9 @@ print_help() {
 	echo "  start        Start proxy container"
 	echo "  test         Test config"
 	echo "  reload       Reload config"
-	echo "  maintenance  Put a file in maintenance mode (config path mandatory)"
-	echo "  online       Get a file out of maintenance mode (config path mandatory)"
+	echo "  maintenance  Put a file in maintenance mode (use it a with file path)"
+	echo "  online       Get a file out of maintenance mode (use it with file path)"
+	echo "  certbot      Run certbot command (use it with arguments)"
 	echo "  stop         Stop proxy container"
 	echo "  restart      Restart proxy container"
 	echo "  down         Stop & delete proxy container"
@@ -50,6 +51,9 @@ case $1 in
 		;;
 	status)
 		docker inspect --format '{{.State.Status}}' $PROXY_NAME
+		;;
+	certbot)
+		docker exec -ti $PROXY_NAME "$@"
 		;;
 	connect)
 		docker exec -ti $PROXY_NAME bash

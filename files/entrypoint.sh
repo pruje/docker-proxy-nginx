@@ -71,7 +71,7 @@ if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 	fi
 
 	echo "Install certbot... (may take a long time)"
-	certbot --install-only > /dev/null <<EOF
+	certbot --install-only <<EOF
 Y
 EOF
 	result || exit 1
@@ -83,7 +83,7 @@ EOF
 		result || exit 1
 
 		echo "Register certbot..."
-		certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email > /dev/null
+		certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email
 		result || exit 1
 	fi
 
@@ -107,6 +107,7 @@ result
 
 echo "Initialize nginx config..."
 proxy_ctl init
+result || exit 1
 
 echo "Start nginx..."
 
