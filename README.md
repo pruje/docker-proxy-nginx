@@ -1,4 +1,4 @@
-# nginx proxy for docker containers
+# Nginx proxy for docker containers
 
 When running multiples web containers on a same machine, you must set a reverse proxy.
 This project aims to configure a simple nginx proxy.
@@ -8,9 +8,14 @@ This project aims to configure a simple nginx proxy.
 2. Copy `docker-compose.example.yml` file to `docker-compose.yml` and customize it if you want.
 3. Run `./proxy_ctl.sh up`
 
-Note: if you haven't
+# SSL certificates
+Auto-signed certificate will be created inside `volumes/certs` but if you want to use
+your custom certificate, create the following files:
+`volumes/certs/default.crt` and `volumes/certs/default.key`
 
-# Configure for your containers
+Be sure to protect correctly these files with good permissions.
+
+# Configuration for your containers
 Add nginx config files inside `volumes/nginx/conf`.
 
 # Connect your containers to the proxy

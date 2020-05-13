@@ -8,6 +8,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - ./volumes/certs:/etc/ssl/nginx
       - ./volumes/letsencrypt/conf:/etc/letsencrypt
       - ./volumes/letsencrypt/log:/var/log/letsencrypt
       - ./volumes/nginx/conf:/etc/nginx/conf.d
