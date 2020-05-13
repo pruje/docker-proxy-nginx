@@ -105,10 +105,10 @@ task "Start cron"
 cron
 result
 
-# prepare to start
+# prepare nginx
 proxy_ctl init
 
-task "Start nginx..."
+echo "Starting nginx..."
 
 # run command
 "$@"

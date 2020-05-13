@@ -30,7 +30,7 @@ get_config() {
 
 
 # Test nginx config
-ctl_test() {
+nginx_test() {
 	local output res
 
 	echo "Test config..."
@@ -38,10 +38,12 @@ ctl_test() {
 	output=$(nginx -t 2>&1)
 	res=$?
 
-	echo "$output" | grep -q 'host not found in upstream' && res=2
+	if [ $res != 0 ] ; then
+		echo "$output" | grep -q ' in /etc/nginx/conf.d/' && res=2
+	fi
 
-	# print unreachable configs
-	for f in /etc/nginx/conf.d/*.unreachable ; do
+	# print disabled configs
+	for f in /etc/nginx/conf.d/*.disabled ; do
 		[ -f "$f" ] && echo "[INFO] disabled config file: $f"
 	done
 
@@ -53,7 +55,7 @@ ctl_test() {
 
 
 # Reload nginx config
-ctl_reload() {
+nginx_reload() {
 	echo "Reload nginx..."
 	nginx -s reload
 	result
@@ -69,8 +71,8 @@ ctl_reload() {
 cmd_init() {
 	local output dest
 
-	# try to reactivate unreachable configs
-	for f in /etc/nginx/conf.d/*.unreachable ; do
+	# try to reactivate config files
+	for f in /etc/nginx/conf.d/*.disabled ; do
 		[ -f "$f" ] || continue
 
 		dest=${f:0:-12}
@@ -82,17 +84,17 @@ cmd_init() {
 	done
 
 	while true ; do
-		output=$(ctl_test)
+		output=$(nginx_test)
 		case $? in
 			0)
 				break
 				;;
 			2)
-				# for each upstream not reachable,
-				for f in $(echo "$output" | grep 'host not found in upstream' | grep -o '/etc/nginx/conf.d/.*' | sed 's/.conf:.*/.conf/g' | sort -u) ; do
+				# for each file in error,
+				for f in $(echo "$output" | grep ' in /etc/nginx/conf.d/' | grep -o '/etc/nginx/conf.d/.*' | sed 's/.conf:.*/.conf/g' | sort -u) ; do
 					# rename config file
-					echo "[WARNING] config file disabled: $f (host unreachable)"
-					mv "$f" "$f".unreachable
+					echo "[WARNING] config file disabled due to errors: $f"
+					mv "$f" "$f".disabled
 				done
 				;;
 			*)
@@ -109,13 +111,13 @@ cmd_init() {
 
 # Test proxy config
 cmd_test() {
-	ctl_test
+	nginx_test
 }
 
 
 # Reload proxy config
 cmd_reload() {
-	ctl_test && ctl_reload
+	nginx_test && nginx_reload
 }
 
 
