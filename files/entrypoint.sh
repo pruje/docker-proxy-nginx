@@ -34,11 +34,8 @@ error() {
 
 # create self-signed certificate if not exists
 if ! [ -f /etc/ssl/nginx/default.crt ] ; then
-	# secure ssl folder
-	chown root:root /etc/ssl/nginx && chmod 700 /etc/ssl/nginx
-
 	task "Generate self-signed certificate"
-	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/nginx/default.key -out /etc/ssl/nginx/default.crt <<EOF
+	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/nginx/default.key -out /etc/ssl/nginx/default.crt > /dev/null <<EOF
 $SELFSSL_COUNTRY
 $SELFSSL_STATE
 $SELFSSL_LOCALITY
@@ -111,7 +108,7 @@ result
 # prepare to start
 proxy_ctl init
 
-task "Start nginx"
+task "Start nginx..."
 
 # run command
 "$@"

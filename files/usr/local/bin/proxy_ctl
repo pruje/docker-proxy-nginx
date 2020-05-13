@@ -31,28 +31,24 @@ get_config() {
 
 # Test nginx config
 ctl_test() {
-	local output res quiet=false
+	local output res
 
-	[ "$1" = "-q" ] && quiet=true
-
-	$quiet || echo "Test config..."
+	echo "Test config..."
 
 	output=$(nginx -t 2>&1)
 	res=$?
 
-	[ $res = 0 ] && result $res
-
-	echo "$output" | grep 'host not found in upstream' && res=2
+	echo "$output" | grep -q 'host not found in upstream' && res=2
 
 	# print unreachable configs
-	if ! $quiet ; then
-		for f in /etc/nginx/conf.d/*.unreachable ; do
-			[ -f "$f" ] && echo "[INFO] disabled config file: $f"
-		done
-	fi
+	for f in /etc/nginx/conf.d/*.unreachable ; do
+		[ -f "$f" ] && echo "[INFO] disabled config file: $f"
+	done
 
-	echo "$output"
-	return $res
+	# print errors
+	[ $res != 0 ] && echo "$output"
+
+	result $res
 }
 
 
@@ -73,8 +69,6 @@ ctl_reload() {
 cmd_init() {
 	local output dest
 
-	echo "Test config..."
-
 	# try to reactivate unreachable configs
 	for f in /etc/nginx/conf.d/*.unreachable ; do
 		[ -f "$f" ] || continue
@@ -88,7 +82,7 @@ cmd_init() {
 	done
 
 	while true ; do
-		output=$(ctl_test -q)
+		output=$(ctl_test)
 		case $? in
 			0)
 				break
