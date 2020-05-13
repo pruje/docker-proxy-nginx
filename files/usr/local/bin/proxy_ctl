@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+#  Proxy controller
+#
+
+usage() {
+	echo "proxy_ctl [OPTIONS] COMMAND"
+	echo "Options:"
+	echo "   -q, --quiet  Silent mode"
+	echo "   -h, --help   Print this help"
+	echo "Commands:"
+	echo "   test     Test config"
+	echo "   reload   Reload ngnix (will be tested before)"
+}
+
+
+print() {
+	$quiet_mode && return 0
+	echo "$*"
+}
+
+
+result() {
+	local res=$?
+	[ -n "$1" ] && res=$1
+
+	if [ $res = 0 ] ; then
+		print "... ok"
+	else
+		print "... FAILED (exit code: $res)"
+	fi
+
+	return $res
+}
+
+
+ctl_test() {
+	local output res quiet=false
+
+	[ "$1" = "-q" ] && quiet=true
+
+	$quiet || print "Test config..."
+
+	output=$(nginx -t 2>&1)
+	res=$?
+
+	[ $res = 0 ] && result $res
+
+	echo "$output" | grep 'host not found in upstream' && res=2
+
+	# print unreachable configs
+	if ! $quiet ; then
+		for f in /etc/nginx/conf.d/*.unreachable ; do
+			[ -f "$f" ] && echo "[INFO] disabled config file: $f"
+		done
+	fi
+
+	echo "$output"
+	return $res
+}
+
+
+ctl_reload() {
+	print "Reload nginx..."
+	nginx -s reload
+	result
+}
+
+
+cmd_test() {
+	ctl_test
+}
+
+
+cmd_reload() {
+	ctl_test && ctl_reload
+}
+
+
+cmd_init() {
+	local output dest
+
+	print "Test config..."
+
+	# try to reactivate unreachable configs
+	for f in /etc/nginx/conf.d/*.unreachable ; do
+		[ -f "$f" ] || continue
+
+		dest=${f:0:-12}
+		if [ -f "$dest" ] ; then
+			print "[WARNING] cannot activate $f config: $dest exists!"
+		else
+			mv "$f" "$dest"
+		fi
+	done
+
+	while true ; do
+		output=$(ctl_test -q)
+		case $? in
+			0)
+				break
+				;;
+			2)
+				# for each upstream not reachable,
+				for f in $(echo "$output" | grep 'host not found in upstream' | grep -o '/etc/nginx/conf.d/.*' | sed 's/.conf:.*/.conf/g' | sort -u) ; do
+					# rename config file
+					print "[WARNING] config file disabled: $f (host unreachable)"
+					mv "$f" "$f".unreachable
+				done
+				;;
+			*)
+				# fatal error
+				echo "$output"
+				return 1
+				;;
+		esac
+	done
+
+	return 0
+}
+
+
+quiet_mode=false
+
+while [ $# -gt 0 ] ; do
+	case $1 in
+		-q|--quiet)
+			quiet_mode=true
+			;;
+		-h|--help)
+			usage
+			exit
+			;;
+		*)
+			break
+			;;
+	esac
+	shift
+done
+
+case $1 in
+	init|test|reload)
+		cmd=$1
+		;;
+	*)
+		usage
+		exit 1
+		;;
+esac
+shift
+
+cmd_$cmd "$@"
+exit $?
