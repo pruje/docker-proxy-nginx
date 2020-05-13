@@ -34,6 +34,11 @@ result() {
 }
 
 
+get_config() {
+	grep -E "^\s*$2\s+" "$1" | tail -n 1 | sed "s/^.*$2\s+//; s/;$//"
+}
+
+
 ctl_test() {
 	local output res quiet=false
 
@@ -74,6 +79,58 @@ cmd_test() {
 
 cmd_reload() {
 	ctl_test && ctl_reload
+}
+
+
+cmd_maintenance() {
+	cd /etc/nginx/conf.d || return 1
+
+	local conf=$(basename "$1")
+	if ! [ -f "$conf" ] ; then
+		usage
+		return 1
+	fi
+
+	local renamed=.$conf.maintenance
+	if [ -f "$renamed" ] ; then
+		echo "already in maintenance"
+		return 0
+	fi
+
+	mv "$conf" "$renamed"
+
+	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
+	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
+
+	if [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
+		cmd_reload
+		return 0
+	fi
+
+	cp /etc/nginx/maintenance.conf "$conf" && \
+	sed -i "s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
+	cmd_reload
+}
+
+
+cmd_online() {
+	cd /etc/nginx/conf.d || return 1
+
+	local conf=$(basename "$1")
+	if ! [ -f "$conf" ] ; then
+		usage
+		return 1
+	fi
+
+	local renamed=.$conf.maintenance
+	if ! [ -f "$renamed" ] ; then
+		echo "already online"
+		return 0
+	fi
+
+	# restore config
+	mv "$renamed" "$conf" && \
+	cmd_reload
 }
 
 
