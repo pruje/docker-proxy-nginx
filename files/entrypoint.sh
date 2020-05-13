@@ -4,18 +4,9 @@
 #  Functions
 #
 
-task() {
-	echo -n "$*..."
-}
-
 result() {
 	local result=$?
-	if [ $result = 0 ] ; then
-		echo "	[ OK ]"
-	else
-		echo "	[ FAILED ]"
-	fi
-
+	[ $result != 0 ] && echo "... FAILED"
 	return $result
 }
 
@@ -34,7 +25,7 @@ error() {
 
 # create self-signed certificate if not exists
 if ! [ -f /etc/ssl/nginx/default.crt ] ; then
-	task "Generate self-signed certificate"
+	echo "Generate self-signed certificate..."
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/nginx/default.key -out /etc/ssl/nginx/default.crt > /dev/null <<EOF
 $SELFSSL_COUNTRY
 $SELFSSL_STATE
@@ -72,28 +63,37 @@ if ! [ -f /etc/nginx/html/index.html ] ; then
 fi
 
 # Initialization of letsencrypt (if used)
-if [ "$LETSENCRYPT_ENABLE" = true ] && ! [ -f /etc/letsencrypt/cli.ini ] ; then
+if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 
 	if [ -z "$LETSENCRYPT_EMAIL" ] ; then
 		error "Email for letsencrypt must be set!"
 		exit 1
 	fi
 
-	# create default config for letsencrypt
-	task "Initialization of letsencrypt config"
-	echo "max-log-backups = 0" > /etc/letsencrypt/cli.ini
+	echo "Install certbot... (may take a long time)"
+	certbot --install-only > /dev/null <<EOF
+Y
+EOF
 	result || exit 1
 
-	# first run of certbot
-	task "First run of certbot"
-	certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email > /dev/null
-	result || exit 1
+	# create default config for letsencrypt
+	if ! [ -f /etc/letsencrypt/cli.ini ] ; then
+		echo "Initialization of letsencrypt config..."
+		echo "max-log-backups = 0" > /etc/letsencrypt/cli.ini
+		result || exit 1
+
+		echo "Register certbot..."
+		certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email > /dev/null
+		result || exit 1
+	fi
 
 	# create cron task to autorenew certificates
-	task "Create certbot cron task"
-	mkdir -p /etc/cron.d && \
-	echo "0 0,12 * * *    root    python3 -c 'import random; import time; time.sleep(random.random() * 3600)' && /usr/local/bin/certbot renew -q" > /etc/cron.d/certbot
-	result || warn "You must renew certificates manually"
+	if ! [ -f /etc/cron.d/certbot ] ; then
+		echo "Create certbot cron task..."
+		mkdir -p /etc/cron.d && \
+		echo "0 0,12 * * *    root    python3 -c 'import random; import time; time.sleep(random.random() * 3600)' && /usr/local/bin/certbot renew -q" > /etc/cron.d/certbot
+		result || warn "You must renew certificates manually"
+	fi
 fi
 
 
@@ -101,14 +101,14 @@ fi
 #  Starting services
 #
 
-task "Start cron"
+echo "Start cron..."
 cron
 result
 
-# prepare nginx
+echo "Initialize nginx config..."
 proxy_ctl init
 
-echo "Starting nginx..."
+echo "Start nginx..."
 
 # run command
 "$@"

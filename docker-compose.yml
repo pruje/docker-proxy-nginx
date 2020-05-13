@@ -5,8 +5,19 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
+    environment:
+      - LETSENCRYPT_ENABLE
+      - LETSENCRYPT_EMAIL
+      - LOGROTATE_ENABLE
+      - SELFSSL_COUNTRY
+      - SELFSSL_STATE
+      - SELFSSL_LOCALITY
+      - SELFSSL_ORG
+      - SELFSSL_OUN
+      - SELFSSL_CN
+      - SELFSSL_EMAIL
     volumes:
       - ./volumes/certs:/etc/ssl/nginx
       - ./volumes/letsencrypt/conf:/etc/letsencrypt
