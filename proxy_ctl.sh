@@ -42,10 +42,11 @@ fi
 
 case $1 in
 	up)
-		run_compose up -d
+		shift
+		run_compose up -d "$@"
 		;;
 	build|start|stop|restart|down)
-		run_compose $1
+		run_compose "$@"
 		;;
 	status)
 		docker inspect --format '{{.State.Status}}' $PROXY_NAME

@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y wget vim logrotate && \
     wget -O /usr/local/bin/certbot https://dl.eff.org/certbot-auto && \
     chown root:root /usr/local/bin/certbot && chmod 755 /usr/local/bin/certbot && \
     rm -f /var/log/nginx/* && \
-    apt-get clean && apt-get autoremove && rm -r /var/lib/apt/lists/*
+    apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
 # copy all files
 COPY files/ /
