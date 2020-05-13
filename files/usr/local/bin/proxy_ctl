@@ -3,48 +3,39 @@
 #  Proxy controller
 #
 
-usage() {
-	echo "proxy_ctl [OPTIONS] COMMAND"
-	echo "Options:"
-	echo "   -q, --quiet  Silent mode"
-	echo "   -h, --help   Print this help"
-	echo "Commands:"
-	echo "   test     Test config"
-	echo "   reload   Reload ngnix (will be tested before)"
-}
+#
+#  Functions
+#
 
-
-print() {
-	$quiet_mode && return 0
-	echo "$*"
-}
-
-
+# Print command result
 result() {
 	local res=$?
 	[ -n "$1" ] && res=$1
 
 	if [ $res = 0 ] ; then
-		print "... ok"
+		echo "... ok"
 	else
-		print "... FAILED (exit code: $res)"
+		echo "... FAILED (exit code: $res)"
 	fi
 
 	return $res
 }
 
 
+# Get a config value from a nginx config file
+# Usage: get_config FILE PARAMETER
 get_config() {
 	grep -E "^\s*$2\s+" "$1" | tail -n 1 | sed "s/^.*$2\s+//; s/;$//"
 }
 
 
+# Test nginx config
 ctl_test() {
 	local output res quiet=false
 
 	[ "$1" = "-q" ] && quiet=true
 
-	$quiet || print "Test config..."
+	$quiet || echo "Test config..."
 
 	output=$(nginx -t 2>&1)
 	res=$?
@@ -65,79 +56,24 @@ ctl_test() {
 }
 
 
+# Reload nginx config
 ctl_reload() {
-	print "Reload nginx..."
+	echo "Reload nginx..."
 	nginx -s reload
 	result
 }
 
 
-cmd_test() {
-	ctl_test
-}
+#
+#  Commands
+#
 
-
-cmd_reload() {
-	ctl_test && ctl_reload
-}
-
-
-cmd_maintenance() {
-	cd /etc/nginx/conf.d || return 1
-
-	local conf=$(basename "$1")
-	if ! [ -f "$conf" ] ; then
-		usage
-		return 1
-	fi
-
-	local renamed=.$conf.maintenance
-	if [ -f "$renamed" ] ; then
-		echo "already in maintenance"
-		return 0
-	fi
-
-	mv "$conf" "$renamed"
-
-	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
-	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
-
-	if [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
-		cmd_reload
-		return 0
-	fi
-
-	cp /etc/nginx/maintenance.conf "$conf" && \
-	sed -i "s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
-	cmd_reload
-}
-
-
-cmd_online() {
-	cd /etc/nginx/conf.d || return 1
-
-	local conf=$(basename "$1")
-	if ! [ -f "$conf" ] ; then
-		usage
-		return 1
-	fi
-
-	local renamed=.$conf.maintenance
-	if ! [ -f "$renamed" ] ; then
-		echo "already online"
-		return 0
-	fi
-
-	# restore config
-	mv "$renamed" "$conf" && \
-	cmd_reload
-}
-
-
+# Initialize nginx
+# Not to be documented, this command is only used by the entrypoint
 cmd_init() {
 	local output dest
 
-	print "Test config..."
+	echo "Test config..."
 
 	# try to reactivate unreachable configs
 	for f in /etc/nginx/conf.d/*.unreachable ; do
@@ -145,7 +81,7 @@ cmd_init() {
 
 		dest=${f:0:-12}
 		if [ -f "$dest" ] ; then
-			print "[WARNING] cannot activate $f config: $dest exists!"
+			echo "[WARNING] cannot activate $f config: $dest exists!"
 		else
 			mv "$f" "$dest"
 		fi
@@ -161,7 +97,7 @@ cmd_init() {
 				# for each upstream not reachable,
 				for f in $(echo "$output" | grep 'host not found in upstream' | grep -o '/etc/nginx/conf.d/.*' | sed 's/.conf:.*/.conf/g' | sort -u) ; do
 					# rename config file
-					print "[WARNING] config file disabled: $f (host unreachable)"
+					echo "[WARNING] config file disabled: $f (host unreachable)"
 					mv "$f" "$f".unreachable
 				done
 				;;
@@ -177,34 +113,115 @@ cmd_init() {
 }
 
 
-quiet_mode=false
+# Test proxy config
+cmd_test() {
+	ctl_test
+}
 
-while [ $# -gt 0 ] ; do
-	case $1 in
-		-q|--quiet)
-			quiet_mode=true
-			;;
-		-h|--help)
-			usage
-			exit
-			;;
-		*)
-			break
-			;;
-	esac
-	shift
-done
 
+# Reload proxy config
+cmd_reload() {
+	ctl_test && ctl_reload
+}
+
+
+# Put a config file in maintenance mode
+# Usage: maintenance FILE
+cmd_maintenance() {
+
+	# usage error
+	if [ -z "$1" ] ; then
+		echo "Usage: proxy_ctl maintenance FILE"
+		return 1
+	fi
+
+	cd /etc/nginx/conf.d || return 1
+
+	local conf=$(basename "$1")
+	if ! [ -f "$conf" ] ; then
+		echo "File not found: $conf"
+		return 1
+	fi
+
+	local renamed=.$conf.maintenance
+	if [ -f "$renamed" ] ; then
+		echo "already in maintenance"
+		return 0
+	fi
+
+	if ! mv "$conf" "$renamed" ; then
+		error "Failed to disable config file: $conf"
+		return 1
+	fi
+
+	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
+	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
+
+	# no ssl config
+	if [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
+		# create empty config
+		touch "$conf"
+		cmd_reload
+		return 0
+	fi
+
+	cp /etc/nginx/maintenance.conf "$conf" && \
+	sed -i "s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
+	cmd_reload
+}
+
+
+# Get a config file out of maintenance mode
+# Usage: online FILE
+cmd_online() {
+
+	# usage error
+	if [ -z "$1" ] ; then
+		echo "Usage: proxy_ctl online FILE"
+		return 1
+	fi
+
+	cd /etc/nginx/conf.d || return 1
+
+	local conf=$(basename "$1")
+	if ! [ -f "$conf" ] ; then
+		echo "File not found: $conf"
+		return 1
+	fi
+
+	local renamed=.$conf.maintenance
+	if ! [ -f "$renamed" ] ; then
+		echo "already online"
+		return 0
+	fi
+
+	# restore config
+	if ! mv "$renamed" "$conf" ; then
+		error "Failed to enable config file: $conf"
+		return 1
+	fi
+
+	cmd_reload
+}
+
+
+#
+#  Main program
+#
+
+# check command
 case $1 in
-	init|test|reload)
+	init|test|reload|maintenance|online)
 		cmd=$1
 		;;
 	*)
-		usage
+		echo "Unknown command: $1"
+		echo "Use proxy_ctl help to see available commands"
 		exit 1
 		;;
 esac
 shift
 
+# run command
 cmd_$cmd "$@"
 exit $?

@@ -1,19 +1,21 @@
 #!/bin/bash
 
-usage() {
-	echo "Usage: proxy_ctl COMMAND [OPTIONS]"
+print_help() {
+	echo "Usage: proxy_ctl COMMAND"
 	echo "Commands:"
-	echo "  up       Run proxy container"
-	echo "  start    Start proxy container"
-	echo "  test     Test config"
-	echo "  reload   Reload config"
-	echo "  stop     Stop proxy container"
-	echo "  restart  Restart proxy container"
-	echo "  down     Stop & delete proxy container"
-	echo "  status   Get status of the proxy container"
-	echo "  connect  Connect to the proxy container (open a bash session)"
-	echo "  build    Build proxy image"
-	echo "  help     Print this help"
+	echo "  up           Run proxy container"
+	echo "  start        Start proxy container"
+	echo "  test         Test config"
+	echo "  reload       Reload config"
+	echo "  maintenance  Put a file in maintenance mode (config path mandatory)"
+	echo "  online       Get a file out of maintenance mode (config path mandatory)"
+	echo "  stop         Stop proxy container"
+	echo "  restart      Restart proxy container"
+	echo "  down         Stop & delete proxy container"
+	echo "  status       Get status of the proxy container"
+	echo "  connect      Connect to the proxy container (open a bash session)"
+	echo "  build        Build proxy image"
+	echo "  help         Print this help"
 }
 
 run_compose() {
@@ -32,15 +34,9 @@ fi
 dir_path=$(dirname "$script_path")
 
 # load environment file
-source "$dir_path"/.env &> /dev/null 
+source "$dir_path"/.env &> /dev/null
 if [ $? != 0 ] ; then
 	echo "ERROR: env file not found or error in it"
-	exit 1
-fi
-
-# usage error
-if [ -z "$1" ] ; then
-	usage
 	exit 1
 fi
 
@@ -58,7 +54,11 @@ case $1 in
 		docker exec -ti $PROXY_NAME bash
 		;;
 	help)
-		usage
+		print_help
+		;;
+	'')
+		print_help
+		exit 1
 		;;
 	*)
 		# other: redirect to proxy script inside container
