@@ -48,4 +48,12 @@ When proxy container restarts, if there are `.unreachable` files, it will test t
 
 # Customizations
 By default, if nothing is found, nginx will return the 503 error code (site in maintenance).
-You can customize with you own maintenance page with adding this to `docker-compose.yml`:
+You can create your own maintenance page in `volumes/nginx/html/index.html`
+
+# License
+This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for the full license text.
+
+# Credits
+Author: Jean Prunneaux  [https://jean.prunneaux.com](https://jean.prunneaux.com)
+
+Website: [https://github.com/pruje/docker-proxy-nginx](https://github.com/pruje/docker-proxy-nginx)
