@@ -2,7 +2,10 @@ version: '3.7'
 services:
   nginx:
     container_name: "$PROXY_NAME"
-    build: .
+    build:
+      context: .
+      args:
+        certbot: $LETSENCRYPT_ENABLE
     restart: unless-stopped
     ports:
       - 80:80

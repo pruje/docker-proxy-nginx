@@ -37,7 +37,7 @@ $SELFSSL_EMAIL
 EOF
 	if ! result ; then
 		error "cannot create self-signed certificate"
-		return 1
+		exit 1
 	fi
 fi
 
@@ -70,21 +70,26 @@ if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 		exit 1
 	fi
 
-	echo "Install certbot... (may take a long time)"
-	certbot --install-only <<EOF
-Y
-EOF
+	echo "Install certbot..."
+	echo y | certbot --install-only
 	result || exit 1
 
-	# create default config for letsencrypt
 	if ! [ -f /etc/letsencrypt/cli.ini ] ; then
 		echo "Initialization of letsencrypt config..."
 		echo "max-log-backups = 0" > /etc/letsencrypt/cli.ini
 		result || exit 1
+	fi
 
+	if ! [ -d /etc/letsencrypt/accounts ] ; then
 		echo "Register certbot..."
 		certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email
 		result || exit 1
+	fi
+
+	# first run of certbot only to create config files; do not care of errors
+	if ! [ -f /etc/letsencrypt/options-ssl-nginx.conf ] ; then
+		echo "Initialize certbot..."
+		echo c | certbot &> /dev/null
 	fi
 
 	# create cron task to autorenew certificates

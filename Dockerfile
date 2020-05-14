@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y wget vim logrotate && \
     rm -f /var/log/nginx/* && \
     apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
 
+# install certbot (if enabled)
+ARG certbot
+RUN [ "$certbot" != true ] || echo y | certbot --install-only
+
 # copy all files
 COPY files/ /
 
