@@ -75,7 +75,7 @@ cmd_init() {
 	for f in /etc/nginx/conf.d/*.disabled ; do
 		[ -f "$f" ] || continue
 
-		dest=${f:0:-12}
+		dest=${f:0:-9}
 		if [ -f "$dest" ] ; then
 			echo "[WARNING] cannot activate $f config: $dest exists!"
 		else
@@ -117,6 +117,12 @@ cmd_test() {
 
 # Reload proxy config
 cmd_reload() {
+	case $1 in
+		--init)
+			cmd_init
+			;;
+	esac
+
 	nginx_test && nginx_reload
 }
 
