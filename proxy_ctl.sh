@@ -34,13 +34,6 @@ fi
 
 dir_path=$(dirname "$script_path")
 
-# load environment file
-source "$dir_path"/.env &> /dev/null
-if [ $? != 0 ] ; then
-	echo "ERROR: env file not found or error in it"
-	exit 1
-fi
-
 case $1 in
 	up)
 		shift
@@ -50,13 +43,13 @@ case $1 in
 		run_compose "$@"
 		;;
 	status)
-		docker inspect --format '{{.State.Status}}' $PROXY_NAME
+		run_compose ps -a
 		;;
 	certbot)
-		docker exec -ti $PROXY_NAME "$@"
+		run_compose exec nginx "$@"
 		;;
 	connect)
-		docker exec -ti $PROXY_NAME bash
+		run_compose exec nginx bash
 		;;
 	help)
 		print_help
@@ -67,7 +60,7 @@ case $1 in
 		;;
 	*)
 		# other: redirect to proxy script inside container
-		docker exec -ti $PROXY_NAME proxy_ctl "$@"
+		run_compose exec nginx proxy_ctl "$@"
 		;;
 esac
 
