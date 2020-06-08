@@ -3,7 +3,7 @@
 When running multiples web containers on a same machine, you must set a reverse proxy.
 This project aims to configure a simple nginx proxy.
 
-# First run
+# First build and run
 1. Copy `env.example` file to `.env` and customize it if you want.
 2. Copy `docker-compose.example.yml` file to `docker-compose.yml` and customize it if you want.
 3. Run `./proxy_ctl.sh up`
@@ -59,6 +59,6 @@ You can create your own maintenance page in `volumes/nginx/html/index.html`
 This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for the full license text.
 
 # Credits
-Author: Jean Prunneaux  [https://jean.prunneaux.com](https://jean.prunneaux.com)
+Author: Jean Prunneaux https://jean.prunneaux.com
 
-Website: [https://github.com/pruje/docker-proxy-nginx](https://github.com/pruje/docker-proxy-nginx)
+Website: https://github.com/pruje/docker-proxy-nginx

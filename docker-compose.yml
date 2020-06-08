@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   nginx:
-    container_name: "$PROXY_NAME"
+    container_name: $PROXY_NAME
     build:
       context: .
       args:
@@ -29,8 +29,8 @@ services:
       - ./volumes/nginx/log:/var/log/nginx
       - ./volumes/nginx/html:/etc/nginx/html
     networks:
-      - "$PROXY_NETWORK"
+      - $PROXY_NETWORK
 
 networks:
   proxy:
-    name: "$PROXY_NETWORK"
+    name: $PROXY_NETWORK

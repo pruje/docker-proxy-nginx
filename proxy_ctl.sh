@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+#  Proxy controller
+#
 
 print_help() {
 	echo "Usage: proxy_ctl COMMAND"
@@ -19,11 +22,6 @@ print_help() {
 	echo "  help         Print this help"
 }
 
-run_compose() {
-	cd "$dir_path" || return 1
-	docker-compose "$@"
-}
-
 # get real path of the script
 if [ "$(uname)" = Darwin ] ; then
 	# macOS which does not support readlink -f option
@@ -32,24 +30,25 @@ else
 	script_path=$(readlink -f "$0")
 fi
 
-dir_path=$(dirname "$script_path")
+cd "$(dirname "$script_path")" || exit 1
 
 case $1 in
 	up)
 		shift
-		run_compose up -d "$@"
+		# force detatch option
+		docker-compose up -d "$@"
 		;;
 	build|start|stop|restart|down)
-		run_compose "$@"
+		docker-compose "$@"
 		;;
 	status)
-		run_compose ps -a
+		docker-compose ps -a
 		;;
 	certbot)
-		run_compose exec nginx "$@"
+		docker-compose exec nginx "$@"
 		;;
 	connect)
-		run_compose exec nginx bash
+		docker-compose exec nginx bash
 		;;
 	help)
 		print_help
@@ -60,7 +59,7 @@ case $1 in
 		;;
 	*)
 		# other: redirect to proxy script inside container
-		run_compose exec nginx proxy_ctl "$@"
+		docker-compose exec nginx proxy_ctl "$@"
 		;;
 esac
 
