@@ -34,7 +34,12 @@ cd "$(dirname "$script_path")" || exit 1
 
 case $1 in
 	up)
+		# ignore "up" argument
 		shift
+
+		# avoid double -d option
+		[ "$1" = "-d" ] && shift
+
 		# force detatch option
 		docker-compose up -d "$@"
 		;;
@@ -62,5 +67,3 @@ case $1 in
 		docker-compose exec nginx proxy_ctl "$@"
 		;;
 esac
-
-exit $?

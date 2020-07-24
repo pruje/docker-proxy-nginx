@@ -118,4 +118,3 @@ echo "Start nginx..."
 
 # run command
 "$@"
-exit $?

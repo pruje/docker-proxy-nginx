@@ -226,4 +226,3 @@ shift
 
 # run command
 cmd_$cmd "$@"
-exit $?
