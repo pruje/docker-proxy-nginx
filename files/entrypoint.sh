@@ -70,10 +70,6 @@ if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 		exit 1
 	fi
 
-	echo "Install certbot..."
-	echo y | certbot --install-only
-	result || exit 1
-
 	if ! [ -f /etc/letsencrypt/cli.ini ] ; then
 		echo "Initialization of letsencrypt config..."
 		echo "max-log-backups = 0" > /etc/letsencrypt/cli.ini
@@ -82,7 +78,12 @@ if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 
 	if ! [ -d /etc/letsencrypt/accounts ] ; then
 		echo "Register certbot..."
-		certbot register -m $LETSENCRYPT_EMAIL --agree-tos --no-eff-email
+		if [ -n "$LETSENCRYPT_EMAIL" ] ; then
+			register_opts=(-m $LETSENCRYPT_EMAIL)
+		else
+			register_opts=(--register-unsafely-without-email)
+		fi
+		certbot register --agree-tos --no-eff-email "${register_opts[@]}"
 		result || exit 1
 	fi
 
@@ -90,14 +91,6 @@ if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 	if ! [ -f /etc/letsencrypt/options-ssl-nginx.conf ] ; then
 		echo "Initialize certbot..."
 		echo c | certbot &> /dev/null
-	fi
-
-	# create cron task to autorenew certificates
-	if ! [ -f /etc/cron.d/certbot ] ; then
-		echo "Create certbot cron task..."
-		mkdir -p /etc/cron.d && \
-		echo "0 0,12 * * *    root    python3 -c 'import random; import time; time.sleep(random.random() * 3600)' && /usr/local/bin/certbot renew -q" > /etc/cron.d/certbot
-		result || warn "You must renew certificates manually"
 	fi
 fi
 
@@ -112,9 +105,4 @@ result
 
 echo "Initialize nginx config..."
 proxy_ctl init
-result || exit 1
-
-echo "Start nginx..."
-
-# run command
-"$@"
+result

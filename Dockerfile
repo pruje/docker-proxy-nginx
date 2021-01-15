@@ -5,18 +5,11 @@ FROM nginx:mainline
 LABEL maintainer="jean@prunneaux.com"
 
 # - install utils
-# - install certbot & give permissions
 # - delete nginx logs redirection
 # - cleanup
-RUN apt-get update && apt-get install -y wget vim logrotate && \
-    wget -O /usr/local/bin/certbot https://dl.eff.org/certbot-auto && \
-    chown root:root /usr/local/bin/certbot && chmod 755 /usr/local/bin/certbot && \
+RUN apt-get update && apt-get install -y curl vim certbot python-certbot-nginx logrotate && \
     rm -f /var/log/nginx/* && \
     apt-get clean && apt-get autoremove && rm -rf /var/lib/apt/lists/*
-
-# install certbot (if enabled)
-ARG certbot
-RUN [ "$certbot" != true ] || echo y | certbot --install-only
 
 # copy all files
 COPY files/ /
