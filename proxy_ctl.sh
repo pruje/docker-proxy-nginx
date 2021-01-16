@@ -3,23 +3,28 @@
 #  Proxy controller
 #
 
+#
+#  Functions
+#
+
 print_help() {
 	echo "Usage: proxy_ctl COMMAND"
 	echo "Commands:"
-	echo "  up           Run proxy container"
-	echo "  start        Start proxy container"
-	echo "  test         Test config"
-	echo "  reload       Reload config"
-	echo "  maintenance  Put a file in maintenance mode (use it a with file path)"
-	echo "  online       Get a file out of maintenance mode (use it with file path)"
-	echo "  certbot      Run certbot command (use it with arguments)"
-	echo "  stop         Stop proxy container"
-	echo "  restart      Restart proxy container"
-	echo "  down         Stop & delete proxy container"
-	echo "  status       Get status of the proxy container"
-	echo "  connect      Connect to the proxy container (open a bash session)"
-	echo "  build        Build proxy image"
-	echo "  help         Print this help"
+	echo "   up [COMPOSE_OPTIONS]       Run proxy container (in detached mode)"
+	echo "   start                      Start proxy container"
+	echo "   test                       Test your nginx config"
+	echo "   reload [-f|--force]        Reload config"
+	echo "   maintenance FILE           Put a nginx config file in maintenance mode"
+	echo "   online FILE                Get a config file out of maintenance mode"
+	echo "   certbot [ARGS]             Run certbot command"
+	echo "   stop [COMPOSE_OPTIONS]     Stop proxy container"
+	echo "   restart [COMPOSE_OPTIONS]  Restart proxy container"
+	echo "   down [COMPOSE_OPTIONS]     Stop & delete proxy container"
+	echo "   status                     Get status of the proxy container"
+	echo "   connect                    Connect to the proxy container (opens a bash session)"
+	echo "   upgrade                    Upgrade proxy from git"
+	echo "   build [COMPOSE_OPTIONS]    Build proxy image"
+	echo "   help                       Print this help"
 }
 
 # Check if an array contains a value
@@ -43,6 +48,11 @@ lb_in_array() {
 	return 2
 }
 
+
+#
+#  Main program
+#
+
 # get real path of the script
 if [ "$(uname)" = Darwin ] ; then
 	# macOS which does not support readlink -f option
@@ -58,11 +68,15 @@ case $1 in
 		# ignore "up" argument
 		shift
 
-		# avoid double -d option
-		[ "$1" = "-d" ] && shift
+		# add --detach option if not specified (but avoid duplicate option)
+		if lb_in_array -d "$@" || lb_in_array --detach "$@" ; then
+			opts=""
+		else
+			opts="-d"
+		fi
 
 		# force detatch option
-		docker-compose up -d "$@"
+		docker-compose up $opts "$@"
 		;;
 	build)
 		# force repull nginx image
@@ -82,6 +96,9 @@ case $1 in
 		;;
 	connect)
 		docker-compose exec nginx bash
+		;;
+	upgrade)
+		git pull
 		;;
 	help)
 		print_help

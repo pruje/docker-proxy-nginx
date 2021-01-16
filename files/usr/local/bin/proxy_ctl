@@ -118,8 +118,8 @@ cmd_test() {
 # Reload proxy config
 cmd_reload() {
 	case $1 in
-		--init)
-			cmd_init
+		-f|--force)
+			cmd_init || return
 			;;
 	esac
 
@@ -211,10 +211,17 @@ cmd_online() {
 #  Main program
 #
 
+cmd=$1
+shift
+
 # check command
 case $1 in
 	init|test|reload|maintenance|online)
-		cmd=$1
+		# run command
+		cmd_$cmd "$@"
+		;;
+	certbot)
+		certbot "$@" --nginx
 		;;
 	*)
 		echo "Unknown command: $1"
@@ -222,7 +229,3 @@ case $1 in
 		exit 1
 		;;
 esac
-shift
-
-# run command
-cmd_$cmd "$@"
