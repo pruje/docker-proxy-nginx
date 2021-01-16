@@ -22,6 +22,27 @@ print_help() {
 	echo "  help         Print this help"
 }
 
+# Check if an array contains a value
+# Usage: lb_in_array VALUE "${ARRAY[@]}"
+lb_in_array() {
+	[ -z "$1" ] && return 1
+
+	# get search value
+	local value search=$1
+	shift
+
+	# if array is empty, return not found
+	[ $# = 0 ] && return 2
+
+	# parse array to find value
+	for value in "$@" ; do
+		[ "$value" = "$search" ] && return 0
+	done
+
+	# not found
+	return 2
+}
+
 # get real path of the script
 if [ "$(uname)" = Darwin ] ; then
 	# macOS which does not support readlink -f option
@@ -43,7 +64,14 @@ case $1 in
 		# force detatch option
 		docker-compose up -d "$@"
 		;;
-	build|start|stop|restart|down)
+	build)
+		# force repull nginx image
+		if lb_in_array --no-cache "$@" ; then
+			docker pull $(grep '^FROM ' Dockerfile | awk '{print $2}') || exit
+		fi
+		docker-compose "$@"
+		;;
+	start|stop|restart|down|logs)
 		docker-compose "$@"
 		;;
 	status)

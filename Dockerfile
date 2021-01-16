@@ -14,12 +14,6 @@ RUN apt-get update && apt-get install -y curl vim certbot python-certbot-nginx l
 # copy all files
 COPY files/ /
 
-# give permissions to files
-RUN chown root:root /entrypoint.sh /usr/local/bin/proxy_ctl && \
-    chmod 755 /entrypoint.sh /usr/local/bin/proxy_ctl
-
-ENTRYPOINT ["/entrypoint.sh"]
-
-HEALTHCHECK --interval=5s --timeout=3s CMD nginx -t
-
-CMD ["nginx", "-g", "daemon off;"]
+# give good permissions to files
+RUN chown root:root /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl && \
+    chmod 755 /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl
