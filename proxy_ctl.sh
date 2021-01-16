@@ -48,6 +48,20 @@ lb_in_array() {
 	return 2
 }
 
+# Pull nginx image
+_pull_image() {
+	docker pull "$(grep '^FROM ' Dockerfile | awk '{print $2}')"
+}
+
+# Build proxy image
+_build() {
+	# force repull nginx image
+	if lb_in_array --no-cache "$@" ; then
+		_pull_image || return
+	fi
+	docker-compose build "$@"
+}
+
 
 #
 #  Main program
@@ -79,11 +93,7 @@ case $1 in
 		docker-compose up $opts "$@"
 		;;
 	build)
-		# force repull nginx image
-		if lb_in_array --no-cache "$@" ; then
-			docker pull $(grep '^FROM ' Dockerfile | awk '{print $2}') || exit
-		fi
-		docker-compose "$@"
+		_build "$@"
 		;;
 	start|stop|restart|down|logs)
 		docker-compose "$@"
@@ -98,7 +108,7 @@ case $1 in
 		docker-compose exec nginx bash
 		;;
 	upgrade)
-		git pull
+		git pull && _pull_image && _build
 		;;
 	help)
 		print_help
