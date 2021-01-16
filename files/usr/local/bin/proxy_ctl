@@ -215,7 +215,7 @@ cmd=$1
 shift
 
 # check command
-case $1 in
+case $cmd in
 	init|test|reload|maintenance|online)
 		# run command
 		cmd_$cmd "$@"
@@ -224,7 +224,7 @@ case $1 in
 		certbot "$@" --nginx
 		;;
 	*)
-		echo "Unknown command: $1"
+		echo "Unknown command: $cmd"
 		echo "Use proxy_ctl help to see available commands"
 		exit 1
 		;;
