@@ -93,6 +93,7 @@ case $1 in
 		docker-compose up $opts "$@"
 		;;
 	build)
+		shift
 		_build "$@"
 		;;
 	start|stop|restart|down|logs)

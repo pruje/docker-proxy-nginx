@@ -65,11 +65,6 @@ fi
 # Initialization of letsencrypt (if used)
 if [ "$LETSENCRYPT_ENABLE" = true ] ; then
 
-	if [ -z "$LETSENCRYPT_EMAIL" ] ; then
-		error "Email for letsencrypt must be set!"
-		exit 1
-	fi
-
 	if ! [ -f /etc/letsencrypt/cli.ini ] ; then
 		echo "Initialization of letsencrypt config..."
 		echo "max-log-backups = 0" > /etc/letsencrypt/cli.ini
