@@ -25,7 +25,7 @@ result() {
 # Get a config value from a nginx config file
 # Usage: get_config FILE PARAMETER
 get_config() {
-	grep -E "^\s*$2\s+" "$1" | tail -n 1 | sed "s/^.*$2\s+//; s/;$//"
+	grep -E "^\s*$2\s+" "$1" | tail -n 1 | sed "s/^.*$2\s//; s/;$//"
 }
 
 
@@ -156,19 +156,20 @@ cmd_maintenance() {
 		return 1
 	fi
 
+	local server_name=$(get_config "$renamed" server_name)
 	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
 	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
 
 	# no ssl config
-	if [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
-		# create empty config
+	if [ -z "$server_name" ] || [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
+		# create empty file to keep it in sight
 		touch "$conf"
 		cmd_reload
 		return 0
 	fi
 
 	cp /etc/nginx/maintenance.conf "$conf" && \
-	sed -i "s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
+	sed -i "s/server_name .*/server_name $server_name;/g; s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
 	cmd_reload
 }
 
