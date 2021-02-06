@@ -189,34 +189,43 @@ cmd_reload() {
 
 # Maintenance operations
 cmd_maintenance() {
+	local force_mode=false
+
+	# force option
+	case $1 in
+		-y|--yes)
+			force_mode=true
+			shift
+			;;
+	esac
+
+	# on/off
 	case $1 in
 		on|off)
 			local mode=$1
 			shift
 			;;
 		*)
-			echo "Usage: proxy_ctl maintenance on|off *|FILE [FILE...]"
+			echo "Usage: proxy_ctl maintenance [-y|--yes] on|off [FILE...]"
 			return 1
 			;;
 	esac
 
-	if [ -z "$1" ] ; then
-		echo "Usage: proxy_ctl maintenance on|off *|FILE [FILE...]"
-		return 1
-	fi
-
 	cd /etc/nginx/conf.d || return 2
 
-	local files=()
+	local files=("$@")
 
 	# all files
-	if [ "$1" = '*' ] ; then
+	if [ ${#files[@]} = 0 ] ; then
 		for f in *.conf ; do
 			[ -f "$f" ] && files+=("$f")
 		done
-	else
-		# specified files
-		files=("$@")
+	fi
+
+	if ! $force_mode ; then
+		echo -n "Confirm maintenance $mode? (y/N) "
+		read confirm
+		[ "$confirm" = y ] || return 0
 	fi
 
 	local result=0
@@ -224,6 +233,7 @@ cmd_maintenance() {
 		maintenance $mode "$f" || result=$?
 	done
 
+	cmd_reload
 	return $result
 }
 
