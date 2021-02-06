@@ -10,21 +10,20 @@
 print_help() {
 	echo "Usage: proxy_ctl COMMAND"
 	echo "Commands:"
-	echo "   up [COMPOSE_OPTIONS]       Run proxy container (in detached mode)"
-	echo "   start                      Start proxy container"
-	echo "   test                       Test your nginx config"
-	echo "   reload [-f|--force]        Reload config"
-	echo "   maintenance FILE           Put a nginx config file in maintenance mode"
-	echo "   online FILE                Get a config file out of maintenance mode"
-	echo "   certbot [ARGS]             Run certbot command"
-	echo "   stop [COMPOSE_OPTIONS]     Stop proxy container"
-	echo "   restart [COMPOSE_OPTIONS]  Restart proxy container"
-	echo "   down [COMPOSE_OPTIONS]     Stop & delete proxy container"
-	echo "   status                     Get status of the proxy container"
-	echo "   connect                    Connect to the proxy container (opens a bash session)"
-	echo "   upgrade                    Upgrade proxy from git"
-	echo "   build [COMPOSE_OPTIONS]    Build proxy image"
-	echo "   help                       Print this help"
+	echo "   up [COMPOSE_OPTIONS]                 Run proxy container (in detached mode)"
+	echo "   start                                Start proxy container"
+	echo "   test                                 Test your nginx config"
+	echo "   reload [-f|--force]                  Reload config (force option to disable configs with issues)"
+	echo "   maintenance on|off *|FILE [FILE...]  Put a nginx config file in/out maintenance mode"
+	echo "   certbot [ARGS]                       Run certbot command"
+	echo "   stop [COMPOSE_OPTIONS]               Stop proxy container"
+	echo "   restart [COMPOSE_OPTIONS]            Restart proxy container"
+	echo "   down [COMPOSE_OPTIONS]               Stop & delete proxy container"
+	echo "   status                               Get status of the proxy container"
+	echo "   connect                              Connect to the proxy container (opens a bash session)"
+	echo "   upgrade                              Upgrade proxy from git"
+	echo "   build [COMPOSE_OPTIONS]              Build proxy image"
+	echo "   help                                 Print this help"
 }
 
 # Check if an array contains a value
@@ -109,7 +108,14 @@ case $1 in
 		docker-compose exec nginx bash
 		;;
 	upgrade)
+		echo "Upgrade proxy..."
 		git pull && _pull_image && _build
+		res=$?
+		if [ $res = 0 ] ; then
+			echo "Run 'proxy_ctl up' to restart the upgraded proxy."
+		else
+			exit $res
+		fi
 		;;
 	help)
 		print_help

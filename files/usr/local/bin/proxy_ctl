@@ -62,6 +62,66 @@ nginx_reload() {
 }
 
 
+# Put a config file in/out maintenance mode
+# Usage: maintenance on|off FILE
+maintenance() {
+	local mode=$1 conf=$(basename "$2")
+	if ! [ -f "$conf" ] ; then
+		echo "$conf: file not found"
+		return 1
+	fi
+
+	local renamed=.$conf.maintenance
+
+	if [ -f "$renamed" ] ; then
+		if [ $mode = on ] ; then
+			echo "$conf: already in maintenance"
+			return 0
+		fi
+	else
+		if [ $mode = off ] ; then
+			echo "$conf: already online"
+			return 0
+		fi
+	fi
+
+	# restore config from maintenance
+	if [ $mode = off ] ; then
+		if ! mv "$renamed" "$conf" ; then
+			echo "$conf: failed to put online"
+			return 1
+		fi
+		cmd_reload
+		return
+	fi
+
+	# maintenance mode
+	if ! cat "$conf" > "$renamed" ; then
+		echo "$conf: failed to put in maintenance"
+		return 1
+	fi
+
+	# create new config file
+	echo "# config put in maintenance mode on $(date) and backed up in file $renamed
+# use command 'proxy_ctl online $conf' to reactivate it
+" > "$conf"
+
+	local server_name=$(get_config "$renamed" server_name)
+	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
+	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
+
+	# no ssl config
+	if [ -z "$server_name" ] || [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
+		cmd_reload
+		return 0
+	fi
+
+	cat /etc/nginx/maintenance.conf >> "$conf" && \
+	sed -i "s/server_name .*/server_name $server_name;/g; s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
+	cmd_reload
+}
+
+
 #
 #  Commands
 #
@@ -127,84 +187,44 @@ cmd_reload() {
 }
 
 
-# Put a config file in maintenance mode
-# Usage: maintenance FILE
+# Maintenance operations
 cmd_maintenance() {
+	case $1 in
+		on|off)
+			local mode=$1
+			shift
+			;;
+		*)
+			echo "Usage: proxy_ctl maintenance on|off *|FILE [FILE...]"
+			return 1
+			;;
+	esac
 
-	# usage error
 	if [ -z "$1" ] ; then
-		echo "Usage: proxy_ctl maintenance FILE"
+		echo "Usage: proxy_ctl maintenance on|off *|FILE [FILE...]"
 		return 1
 	fi
 
-	cd /etc/nginx/conf.d || return 1
+	cd /etc/nginx/conf.d || return 2
 
-	local conf=$(basename "$1")
-	if ! [ -f "$conf" ] ; then
-		echo "File not found: $conf"
-		return 1
+	local files=()
+
+	# all files
+	if [ "$1" = '*' ] ; then
+		for f in *.conf ; do
+			[ -f "$f" ] && files+=("$f")
+		done
+	else
+		# specified files
+		files=("$@")
 	fi
 
-	local renamed=.$conf.maintenance
-	if [ -f "$renamed" ] ; then
-		echo "already in maintenance"
-		return 0
-	fi
+	local result=0
+	for f in "${files[@]}" ; do
+		maintenance $mode "$f" || result=$?
+	done
 
-	if ! mv "$conf" "$renamed" ; then
-		error "Failed to disable config file: $conf"
-		return 1
-	fi
-
-	local server_name=$(get_config "$renamed" server_name)
-	local ssl_certificate=$(get_config "$renamed" ssl_certificate)
-	local ssl_certificate_key=$(get_config "$renamed" ssl_certificate_key)
-
-	# no ssl config
-	if [ -z "$server_name" ] || [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
-		# create empty file to keep it in sight
-		touch "$conf"
-		cmd_reload
-		return 0
-	fi
-
-	cp /etc/nginx/maintenance.conf "$conf" && \
-	sed -i "s/server_name .*/server_name $server_name;/g; s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
-	cmd_reload
-}
-
-
-# Get a config file out of maintenance mode
-# Usage: online FILE
-cmd_online() {
-
-	# usage error
-	if [ -z "$1" ] ; then
-		echo "Usage: proxy_ctl online FILE"
-		return 1
-	fi
-
-	cd /etc/nginx/conf.d || return 1
-
-	local conf=$(basename "$1")
-	if ! [ -f "$conf" ] ; then
-		echo "File not found: $conf"
-		return 1
-	fi
-
-	local renamed=.$conf.maintenance
-	if ! [ -f "$renamed" ] ; then
-		echo "already online"
-		return 0
-	fi
-
-	# restore config
-	if ! mv "$renamed" "$conf" ; then
-		error "Failed to enable config file: $conf"
-		return 1
-	fi
-
-	cmd_reload
+	return $result
 }
 
 
@@ -217,7 +237,7 @@ shift
 
 # check command
 case $cmd in
-	init|test|reload|maintenance|online)
+	init|test|reload|maintenance)
 		# run command
 		cmd_$cmd "$@"
 		;;
