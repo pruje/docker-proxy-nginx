@@ -55,6 +55,11 @@ When proxy container restarts, if there are `.unreachable` files, it will test t
 By default, if nothing is found, nginx will return the 503 error code (site in maintenance).
 You can create your own maintenance page in `volumes/nginx/html/index.html`
 
+# Upgrade
+Run `proxy_ctl upgrade` to upgrade proxy.
+
+If you don't have git on the host, you can also manually copy the sources, then run `proxy_ctl build` and `proxy_ctl up`.
+
 # License
 This project is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for the full license text.
 

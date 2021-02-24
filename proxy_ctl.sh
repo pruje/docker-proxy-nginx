@@ -110,11 +110,21 @@ case $1 in
 		docker-compose exec nginx bash
 		;;
 	upgrade)
-		echo "Upgrade proxy..."
-		git pull && _pull_image && _build
+		echo "Update from repository..."
+		git pull || exit
+
+		# get current version
+		version=$(docker-compose exec nginx proxy_ctl version 2> /dev/null | grep 'proxy version' | awk -F ':' '{print $2}' | sed 's/[[:space:]]//g')
+
+		# if already running the last version, exit
+		[ "$version" = "$(grep 'VERSION=' Dockerfile 2> /dev/null | cut -d= -f2)" ] && exit 0
+
+		echo
+		echo "Build proxy..."
+		_pull_image && _build
 		res=$?
 		if [ $res = 0 ] ; then
-			echo "Run 'proxy_ctl up' to restart the upgraded proxy."
+			echo "Run 'proxy_ctl up' to restart proxy in new version."
 		else
 			exit $res
 		fi

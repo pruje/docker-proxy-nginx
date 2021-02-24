@@ -3,6 +3,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## 1.2.1 (2021-02-24)
 - New `version` controller command to print
+- Improve upgrade command
 - Improve and complete help command
 
 ## 1.2.0 (2021-02-06)
