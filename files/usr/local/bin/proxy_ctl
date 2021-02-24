@@ -7,6 +7,16 @@
 #  Functions
 #
 
+print_help() {
+	echo "Usage: proxy_ctl COMMAND"
+	echo "Commands:"
+	echo "   test                          Test your nginx config"
+	echo "   reload [-f|--force]           Reload config (force option to disable configs with issues)"
+	echo "   maintenance on|off [FILE...]  Put a nginx config file in/out maintenance mode (--yes to not confirm)"
+	echo "   version                       Print versions of proxy and nginx"
+	echo "   help                          Print this help"
+}
+
 # Print command result
 result() {
 	local res=$?
@@ -253,6 +263,13 @@ case $cmd in
 		;;
 	certbot)
 		certbot "$@" --nginx
+		;;
+	version)
+		echo "proxy version: $VERSION"
+		nginx -v
+		;;
+	help)
+		print_help
 		;;
 	*)
 		echo "Unknown command: $cmd"

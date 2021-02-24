@@ -4,6 +4,8 @@ FROM nginx:mainline
 
 LABEL maintainer="jean@prunneaux.com"
 
+ENV VERSION=1.2.1
+
 # - install utils
 # - delete nginx logs redirection
 # - cleanup

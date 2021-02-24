@@ -20,9 +20,11 @@ print_help() {
 	echo "   restart [COMPOSE_OPTIONS]     Restart proxy container"
 	echo "   down [COMPOSE_OPTIONS]        Stop & delete proxy container"
 	echo "   status                        Get status of the proxy container"
+	echo "   logs [COMPOSE_OPTIONS]        Print container logs"
 	echo "   connect                       Connect to the proxy container (opens a bash session)"
 	echo "   upgrade                       Upgrade proxy from git"
 	echo "   build [COMPOSE_OPTIONS]       Build proxy image"
+	echo "   version                       Print versions of proxy and nginx"
 	echo "   help                          Print this help"
 }
 
