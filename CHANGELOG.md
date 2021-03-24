@@ -1,6 +1,10 @@
 # Changelog
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.2.2 (2021-03-24)
+- Rename service `nginx` to `proxy` in order to use it in internal DNS
+- Upgrade command now shuts down container and recreate it after upgrade
+
 ## 1.2.1 (2021-02-24)
 - New `version` controller command to print
 - Improve upgrade command

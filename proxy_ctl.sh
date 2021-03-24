@@ -110,6 +110,14 @@ case $1 in
 		docker-compose exec nginx bash
 		;;
 	upgrade)
+		echo "WARNING: Upgrade will shutdown and recreate your proxy container."
+		echo -n "Ready to go? (y/N) "
+		read ok
+		[ "$ok" = y ] || exit 0
+
+		echo "Shut down proxy..."
+		docker-compose down || exit
+
 		echo "Update from repository..."
 		git pull || exit
 
@@ -123,11 +131,10 @@ case $1 in
 		echo "Build proxy..."
 		_pull_image && _build
 		res=$?
-		if [ $res = 0 ] ; then
-			echo "Run 'proxy_ctl up' to restart proxy in new version."
-		else
-			exit $res
-		fi
+		[ $res = 0 ] || exit $res
+
+		echo "Run proxy..."
+		docker-compose up -d || exit
 		;;
 	help)
 		print_help

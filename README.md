@@ -47,12 +47,15 @@ In case there is an error in one of your config files (e.g. container unreachabl
 You have to run `./proxy_ctl.sh reload` to reload config. If it fails, it will not reload (safe in production environment).
 
 ## proxy restarted
-If the proxy container must restart, it will rename your bad config files with `.unreachable` suffix.
-You will have to fix the problems, rename files in `.conf` then reload config.
-When proxy container restarts, if there are `.unreachable` files, it will test them and if config is fixed, it will automatically rename and enable them.
+At the first run or if the proxy container must restart, it will rename your bad config files with `.disabled` suffix.
+
+You will have to fix the config file (or maybe it's because a container is not reachable), then reload config with `--force` option to re-enable it.
+
+When proxy container restarts, if there are `.disabled` files, it will test them and if config is fixed, it will automatically rename and enable them.
 
 # Customizations
 By default, if nothing is found, nginx will return the 503 error code (site in maintenance).
+
 You can create your own maintenance page in `volumes/nginx/html/index.html`
 
 # Upgrade
