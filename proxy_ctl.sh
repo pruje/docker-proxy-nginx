@@ -104,17 +104,17 @@ case $1 in
 		docker-compose ps -a
 		;;
 	certbot)
-		docker-compose exec nginx "$@"
+		docker-compose exec proxy "$@"
 		;;
 	connect)
-		docker-compose exec nginx bash
+		docker-compose exec proxy bash
 		;;
 	upgrade)
 		echo "Update from repository..."
 		git pull || exit
 
 		# get current version
-		version=$(docker-compose exec nginx proxy_ctl version 2> /dev/null | grep 'proxy version' | awk -F ':' '{print $2}' | sed 's/[[:space:]]//g')
+		version=$(docker-compose exec proxy proxy_ctl version 2> /dev/null | grep 'proxy version' | awk -F ':' '{print $2}' | sed 's/[[:space:]]//g')
 
 		# if already running the last version, exit
 		[ "$version" = "$(grep 'VERSION=' Dockerfile 2> /dev/null | cut -d= -f2)" ] && exit 0
@@ -125,7 +125,8 @@ case $1 in
 		res=$?
 		[ $res = 0 ] || exit $res
 
-		echo "Run '$0 up' to restart proxy in upgraded version."
+		echo
+		echo "Please run '$0 up' to restart proxy in upgraded version."
 		;;
 	help)
 		print_help
@@ -136,6 +137,6 @@ case $1 in
 		;;
 	*)
 		# other: redirect to proxy script inside container
-		docker-compose exec nginx proxy_ctl "$@"
+		docker-compose exec proxy proxy_ctl "$@"
 		;;
 esac
