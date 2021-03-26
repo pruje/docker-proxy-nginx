@@ -56,7 +56,7 @@ When proxy container restarts, if there are `.disabled` files, it will test them
 # Customizations
 By default, if nothing is found, nginx will return the 503 error code (site in maintenance).
 
-You can create your own maintenance page in `volumes/nginx/html/index.html`
+You can create your own maintenance page in `volumes/nginx/html/maintenance/index.html`
 
 # Upgrade
 Run `proxy_ctl upgrade` to upgrade proxy.

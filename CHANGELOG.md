@@ -1,6 +1,9 @@
 # Changelog
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.2.4 (2021-03-26)
+- Moved maintenance page in `/etc/nginx/html/maintenance`
+
 ## 1.2.3 (2021-03-25)
 - Fix regressive bugs introduced in 1.2.2 release
 - Revert 1.2.2 upgrade changes

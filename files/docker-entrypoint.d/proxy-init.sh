@@ -55,8 +55,8 @@ else
 fi
 
 # create nginx default page if not exists
-if ! [ -f /etc/nginx/html/index.html ] ; then
-	if ! cp /usr/share/nginx/html/50x.html /etc/nginx/html/index.html ; then
+if ! [ -f /etc/nginx/html/maintenance/index.html ] ; then
+	if ! cp /usr/share/nginx/html/index.html /etc/nginx/html/maintenance/index.html ; then
 		error "cannot initialize default nginx page"
 		exit 1
 	fi
