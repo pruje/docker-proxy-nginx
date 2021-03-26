@@ -4,8 +4,6 @@ FROM nginx:mainline
 
 LABEL maintainer="jean@prunneaux.com"
 
-ENV VERSION=1.2.4
-
 # - install utils
 # - delete nginx logs redirection
 # - cleanup
@@ -19,3 +17,5 @@ COPY files/ /
 # give good permissions to files
 RUN chown root:root /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl && \
     chmod 755 /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl
+
+ENV VERSION=1.2.4
