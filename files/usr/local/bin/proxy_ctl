@@ -23,7 +23,7 @@ result() {
 	[ -n "$1" ] && res=$1
 
 	if [ $res = 0 ] ; then
-		echo "... ok"
+		echo "... OK"
 	else
 		echo "... FAILED (exit code: $res)"
 	fi
@@ -83,6 +83,7 @@ maintenance() {
 
 	local renamed=.$conf.maintenance
 
+	# if already done
 	if [ -f "$renamed" ] ; then
 		if [ $mode = on ] ; then
 			echo "$conf: already in maintenance"
@@ -95,19 +96,27 @@ maintenance() {
 		fi
 	fi
 
-	# restore config from maintenance
+	# print info
+	if [ $mode = on ] ; then
+		echo -n Dis
+	else
+		echo -n En
+	fi
+	echo "able '$conf'..."
+
+	# maintenance OFF
 	if [ $mode = off ] ; then
+		# restore config from maintenance
 		if ! mv "$renamed" "$conf" ; then
-			echo "$conf: failed to put online"
+			echo "ERROR: failed to put online"
 			return 1
 		fi
-		cmd_reload
-		return
+		return 0
 	fi
 
-	# maintenance mode
+	# maintenance ON
 	if ! cat "$conf" > "$renamed" ; then
-		echo "$conf: failed to put in maintenance"
+		echo "ERROR: failed to put in maintenance"
 		return 1
 	fi
 
@@ -122,13 +131,12 @@ maintenance() {
 
 	# no ssl config
 	if [ -z "$server_name" ] || [ -z "$ssl_certificate" ] || [ -z "$ssl_certificate_key" ] ; then
-		cmd_reload
 		return 0
 	fi
 
+	# inject SSL maintenance config in new conf file
 	cat /etc/nginx/maintenance.conf >> "$conf" && \
-	sed -i "s/server_name .*/server_name $server_name;/g; s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf" && \
-	cmd_reload
+	sed -i "s/server_name .*/server_name $server_name;/g; s|ssl_certificate .*|ssl_certificate $ssl_certificate;|; s|ssl_certificate_key .*|ssl_certificate_key $ssl_certificate_key;|" "$conf"
 }
 
 
@@ -210,7 +218,7 @@ cmd_maintenance() {
 			shift
 			;;
 		*)
-			echo "Usage: proxy_ctl maintenance [-y|--yes] on|off [FILE...]"
+			echo "Usage: proxy_ctl maintenance [-y|--yes] on|off [FILE|DOMAIN...]"
 			return 1
 			;;
 	esac
@@ -227,14 +235,15 @@ cmd_maintenance() {
 	fi
 
 	if ! $force_mode ; then
-		echo -n "Confirm maintenance $mode? (y/N) "
+		echo -n "Confirm switch maintenance mode to '$mode'? (y/N) "
 		read confirm
 		[ "$confirm" = y ] || return 0
 	fi
 
 	local result=0
 	for f in "${files[@]}" ; do
-		maintenance $mode "$f" || result=$?
+		maintenance $mode "$f"
+		result || result=$?
 	done
 
 	cmd_reload

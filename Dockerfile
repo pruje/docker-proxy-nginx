@@ -18,4 +18,4 @@ COPY files/ /
 RUN chown root:root /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl && \
     chmod 755 /docker-entrypoint.d/proxy-init.sh /usr/local/bin/proxy_ctl
 
-ENV VERSION=1.2.4
+ENV VERSION=1.2.5
