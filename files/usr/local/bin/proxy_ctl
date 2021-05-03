@@ -11,7 +11,7 @@ print_help() {
 	echo "Usage: proxy_ctl COMMAND"
 	echo "Commands:"
 	echo "   test                          Test your nginx config"
-	echo "   reload [-f|--force]           Reload config (force option to disable configs with issues)"
+	echo "   reload                        Reload config"
 	echo "   maintenance on|off [FILE...]  Put a nginx config file in/out maintenance mode (--yes to not confirm)"
 	echo "   version                       Print versions of proxy and nginx"
 	echo "   help                          Print this help"
@@ -187,13 +187,7 @@ cmd_test() {
 
 # Reload proxy config
 cmd_reload() {
-	case $1 in
-		-f|--force)
-			cmd_init || return
-			;;
-	esac
-
-	nginx_test && nginx_reload
+	cmd_init && nginx_reload
 }
 
 

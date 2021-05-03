@@ -13,7 +13,7 @@ print_help() {
 	echo "   up [COMPOSE_OPTIONS]          Run proxy container (in detached mode)"
 	echo "   start                         Start proxy container"
 	echo "   test                          Test your nginx config"
-	echo "   reload [-f|--force]           Reload config (force option to disable configs with issues)"
+	echo "   reload                        Reload config"
 	echo "   maintenance on|off [FILE...]  Put a nginx config file in/out maintenance mode (--yes to not confirm)"
 	echo "   certbot [ARGS]                Run certbot command"
 	echo "   stop [COMPOSE_OPTIONS]        Stop proxy container"
@@ -113,10 +113,10 @@ case $1 in
 		echo "Update from repository..."
 		git pull || exit
 
-		# get current version
+		# get current version from running container (ignore errors)
 		version=$(docker-compose exec proxy proxy_ctl version 2> /dev/null | grep 'proxy version' | awk -F ':' '{print $2}' | sed 's/[[:space:]]//g')
 
-		# if already running the last version, exit
+		# if already running with the last version, exit
 		[ "$version" = "$(grep 'VERSION=' Dockerfile 2> /dev/null | cut -d= -f2)" ] && exit 0
 
 		echo
