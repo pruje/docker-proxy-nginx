@@ -1,6 +1,12 @@
 # Changelog
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## 1.2.6 (2022-05-07)
+- Bugfix in build (update certbot dependancy)
+
+## 1.2.5 (2021-05-03)
+- Improve maintenance command
+
 ## 1.2.4 (2021-03-26)
 - Moved maintenance page in `/etc/nginx/html/maintenance`
 
