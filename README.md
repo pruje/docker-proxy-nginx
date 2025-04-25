@@ -1,5 +1,7 @@
 # Nginx proxy for docker containers
 
+# WARNING: This project is deprecated, as many better solutions exists today
+
 When running multiples web containers on a same machine, you must set a reverse proxy.
 This project aims to configure a simple nginx proxy.
 
